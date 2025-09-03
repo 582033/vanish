@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vanish - 阅后即焚</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            padding: 2rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        #result {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            display: none;
+        }
+        #result.error {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <main class="container" id="app-container">
+        <!-- 内容将由JS动态渲染 -->
+    </main>
+
+    <script>
+        const container = document.getElementById('app-container');
+
+        const AppRoutes = {
+            CREATE: 'create',
+            VIEW: 'view'
+        };
+
+        function renderCreateForm() {
+            container.innerHTML = `
+                <h1 style="text-align: center;">Vanish</h1>
+                <p style="text-align: center;">创建一条秘密消息。该消息在被阅读一次或超过设定的时间后将自动销毁。</p>
+                
+                <form id="secret-form">
+                    <label for="message">您的秘密消息 (最多 500 字)</label>
+                    <textarea id="message" name="message" rows="5" required maxlength="500"></textarea>
+
+                    <label for="expiration">自动销毁时间</label>
+                    <select id="expiration" name="expiration">
+                        <option value="60">1 分钟</option>
+                        <option value="300">5 分钟</option>
+                        <option value="600" selected>10 分钟</option>
+                        <option value="1800">30 分钟</option>
+                        <option value="3600">1 小时</option>
+                        <option value="21600">6 小时</option>
+                        <option value="43200">12 小时</option>
+                        <option value="86400">24 小时</option>
+                    </select>
+                    
+                    <button type="submit" id="submit-btn">创建秘密链接</button>
+                </form>
+
+                <div id="result">
+                    <strong>创建成功！</strong> 请分享此链接:
+                    <input type="text" id="secret-link" readonly>
+                    <button id="copy-btn">复制</button>
+                </div>
+            `;
+            attachCreateFormListeners();
+        }
+        
+        async function renderSecretView(id) {
+            container.innerHTML = '<h2>正在加载秘密...</h2>';
+            try {
+                const response = await fetch(`/api/secrets/${id}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "Oops.. 消息不存在或已被销毁。");
+                }
+                
+                container.innerHTML = `
+                    <h2>秘密消息:</h2>
+                    <pre style="white-space: pre-wrap; background: #f0f0f0; padding: 1rem; border-radius: 4px;">${data.message}</pre>
+                    <p>此消息已被销毁。</p>
+                `;
+            } catch (error) {
+                container.innerHTML = `
+                    <h2>Oops..</h2>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+
+        function attachCreateFormListeners() {
+            const form = document.getElementById('secret-form');
+            const resultDiv = document.getElementById('result');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const submitBtn = document.getElementById('submit-btn');
+                submitBtn.setAttribute('aria-busy', 'true');
+                submitBtn.disabled = true;
+
+                const message = document.getElementById('message').value;
+                const expires_in_secs = parseInt(document.getElementById('expiration').value, 10);
+
+                try {
+                    const response = await fetch('/api/secrets', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message, expires_in_secs })
+                    });
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || '出错了，请重试。');
+                    }
+
+                    const secretUrl = `${window.location.origin}/#${data.id}`;
+                    const secretLinkInput = document.getElementById('secret-link');
+                    secretLinkInput.value = secretUrl;
+                    resultDiv.className = '';
+                    resultDiv.style.display = 'block';
+
+                    secretLinkInput.select();
+                    document.execCommand('copy');
+                    document.getElementById('copy-btn').textContent = '已复制!';
+
+                } catch (error) {
+                    resultDiv.className = 'error';
+                    resultDiv.innerHTML = `<strong>错误:</strong> ${error.message}`;
+                    resultDiv.style.display = 'block';
+                } finally {
+                    submitBtn.removeAttribute('aria-busy');
+                    submitBtn.disabled = false;
+                }
+            });
+
+            const copyBtn = document.getElementById('copy-btn');
+            copyBtn.addEventListener('click', () => {
+                const secretLinkInput = document.getElementById('secret-link');
+                secretLinkInput.select();
+                document.execCommand('copy');
+                copyBtn.textContent = '已复制!';
+                setTimeout(() => { copyBtn.textContent = '复制'; }, 2000);
+            });
+        }
+
+        function router() {
+            if (window.location.hash) {
+                const id = window.location.hash.substring(1);
+                renderSecretView(id);
+            } else {
+                renderCreateForm();
+            }
+        }
+
+        window.addEventListener('hashchange', router);
+        window.addEventListener('load', router);
+    </script>
+</body>
+</html>
