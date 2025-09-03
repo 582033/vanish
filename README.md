@@ -17,28 +17,67 @@ Vanish 是一个简单的、自托管的、阅后即焚的秘密消息分享应�
 - **前端**: 原生 HTML, CSS, JavaScript (使用 [Pico.css](https://picocss.com/) 美化界面)
 - **构建工具**: Cargo
 
+## 🚢 发布新版本
+
+当您修改了代码并希望发布一个新版本时，可以使用项目提供的自动化脚本。
+
+在运行脚本前，请确保您已经通过 `docker login` 命令登录了 Docker Hub。
+
+**执行脚本:**
+```bash
+# 发布一个带版本号的镜像 (例如: 1.0.0)
+./build_and_push.sh 1.0.0
+
+# 或者，只发布 latest 版本的镜像
+./build_and_push.sh
+```
+
+脚本会自动完成构建、标记和推送到 Docker Hub 的所有步骤。
+
+## ⚙️ 配置
+
+应用的环境变量配置遵循 `.env` 文件标准。项目提供了一个 `.env.example` 文件作为模板。
+
+**初次配置步骤:**
+1.  在项目根目录，从模板复制一份配置文件：
+    ```bash
+    cp .env.example .env
+    ```
+2.  打开并修改新建的 `.env` 文件，设置您需要的变量值。
+
+- `APP_PORT`: 设置服务监听的端口。默认值为 `5820`。
+
+`docker-compose` 会自动加载 `.env` 文件。
+
 ## 🚀 如何运行
 
-### 方式一：使用 Docker Compose (推荐用于本地开发)
+在运行之前，请确保您已经按照上面的“配置”说明，创建了您自己的 `.env` 文件。
 
-这种方式非常适合在本地进行开发和测试，命令简单。
+### 方式一：使用 Docker Compose (推荐)
 
-1.  **克隆仓库:**
+### 方式一：使用 Docker Compose (推荐)
+
+这种方式清晰地声明了服务配置，命令简单，推荐在各种环境中使用。
+
+1.  **准备 `docker-compose.yml`:**
+    确保项目中有 `docker-compose.yml` 文件。
+
+2.  **拉取并启动容器:**
     ```bash
-    git clone https://github.com/582033/vanish
-    cd vanish
+    docker-compose up -d
     ```
-
-2.  **构建并启动容器:**
-    ```bash
-    docker-compose up -d --build
-    ```
-    此命令会在后台构建并启动应用。
+    此命令会自动从 Docker Hub 拉取 `yjiang/vanish:latest` 镜像并在后台启动它。
 
 3.  **访问应用:**
     在浏览器中打开 `http://127.0.0.1:5820`。
 
-### 方式二：使用 Docker Run (推荐用于生产部署)
+4.  **更新版本:**
+    ```bash
+    docker-compose pull && docker-compose up -d
+    ```
+    这个命令会拉取最新的镜像并重启服务。
+
+### 方式二：使用 Docker Run (单命令运行)
 
 这种方式直接使用 Docker Hub 上的预构建镜像，适合在服务器上快速部署。
 

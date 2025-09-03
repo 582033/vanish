@@ -1,12 +1,12 @@
-version: '3.8'
-
 services:
   vanish:
     # 使用项目根目录下的 Dockerfile进行构建
-    build: .
+    image: yjiang/vanish:latest
     ports:
-      # 将主机的 5820 端口映射到容器的 5820 端口
-      - "5820:5820"
+      # 将主机的 APP_PORT 端口映射到容器的 APP_PORT 端口
+      - "${APP_PORT}:${APP_PORT}"
+    environment:
+      - APP_PORT=${APP_PORT}
     # 设置重启策略，除非手动停止，否则容器会自动重启
     restart: unless-stopped
     # 为容器指定一个友好的名称

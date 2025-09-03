@@ -44,8 +44,9 @@ COPY --from=builder /usr/src/vanish/target/x86_64-unknown-linux-musl/release/van
 # Copy the static files for the UI
 COPY --from=builder /usr/src/vanish/static ./static
 
-# Expose the port the app runs on
-EXPOSE 5820
+# Expose the port the app runs on. We use a variable to make it clear.
+ARG APP_PORT=5820
+EXPOSE ${APP_PORT}
 
 # The command to run the application
 CMD ["./vanish"]

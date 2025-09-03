@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vanish | 阅后即焚</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/tailwind.min.css">
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans">
     <main id="app-container" class="w-full max-w-lg mx-auto p-4">
@@ -94,6 +94,37 @@
             const form = document.getElementById('secret-form');
             const resultDiv = document.getElementById('result');
 
+            // A robust clipboard copy function with fallback
+            async function copyTextToClipboard(text) {
+                try {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(text);
+                        return true;
+                    } else {
+                        // Fallback for insecure contexts or older browsers
+                        const textArea = document.createElement("textarea");
+                        textArea.value = text;
+                        textArea.style.position = "fixed";
+                        textArea.style.left = "-9999px";
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        try {
+                            document.execCommand('copy');
+                            return true;
+                        } catch (e) {
+                            console.error('Fallback copy failed: ', e);
+                            return false;
+                        } finally {
+                            document.body.removeChild(textArea);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Clipboard copy failed: ', err);
+                    return false;
+                }
+            }
+
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const submitBtn = document.getElementById('submit-btn');
@@ -128,14 +159,29 @@
                     resultDiv.classList.remove('hidden');
 
                     const copyBtn = document.getElementById('copy-btn');
+                    const secretLinkInput = document.getElementById('secret-link');
+
+                    const updateCopyButton = (isCopied) => {
+                        copyBtn.textContent = isCopied ? '已复制!' : '复制';
+                    };
+
                     copyBtn.addEventListener('click', () => {
-                        const secretLinkInput = document.getElementById('secret-link');
-                        secretLinkInput.select();
-                        navigator.clipboard.writeText(secretLinkInput.value);
-                        copyBtn.textContent = '已复制!';
-                        setTimeout(() => { copyBtn.textContent = '复制'; }, 2000);
+                        copyTextToClipboard(secretLinkInput.value).then(success => {
+                            if (success) {
+                                updateCopyButton(true);
+                                setTimeout(() => updateCopyButton(false), 2000);
+                            }
+                        });
                     });
-                    copyBtn.click(); // Auto-copy
+
+                    copyTextToClipboard(secretUrl).then(success => {
+                        if (success) {
+                            updateCopyButton(true);
+                            setTimeout(() => updateCopyButton(false), 2000);
+                        } else {
+                            updateCopyButton(false);
+                        }
+                    });
 
                 } catch (error) {
                     resultDiv.className = 'mt-6 p-4 rounded-md bg-red-50 border-l-4 border-red-400';
