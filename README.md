@@ -19,24 +19,67 @@ Vanish 是一个简单的、自托管的、阅后即焚的秘密消息分享应�
 
 ## 🚀 如何运行
 
-### 环境要求
-确保您已经安装了 [Rust 工具链](https://www.rust-lang.org/tools/install)。
+### 方式一：使用 Docker Compose (推荐用于本地开发)
 
-### 步骤
+这种方式非常适合在本地进行开发和测试，命令简单。
+
 1.  **克隆仓库:**
     ```bash
-    git clone <your-repository-url>
+    git clone https://github.com/582033/vanish
     cd vanish
     ```
 
-2.  **编译并运行 (推荐生产模式):**
+2.  **构建并启动容器:**
     ```bash
-    cargo run --release
+    docker-compose up -d --build
     ```
-    这个命令会先以优化模式编译项目，然后启动服务器。
+    此命令会在后台构建并启动应用。
 
 3.  **访问应用:**
-    服务器启动后，在浏览器中打开 `http://127.0.0.1:8080` 即可开始使用。
+    在浏览器中打开 `http://127.0.0.1:5820`。
+
+### 方式二：使用 Docker Run (推荐用于生产部署)
+
+这种方式直接使用 Docker Hub 上的预构建镜像，适合在服务器上快速部署。
+
+1.  **拉取镜像:**
+    首先从 Docker Hub 拉取最新的镜像。
+    ```bash
+    docker pull yjiang/vanish:latest
+    ```
+
+2.  **运行容器:**
+    执行以下命令来启动应用。
+    ```bash
+    docker run -d -p 5820:5820 --restart unless-stopped --name vanish_app yjiang/vanish:latest
+    ```
+    此命令会在后台启动一个名为 `vanish_app` 的容器。
+
+3.  **访问应用:**
+    在浏览器中打开 `http://127.0.0.1:5820`。
+
+### 本地运行 (不使用Docker)
+
+如果您想在本地进行开发和调试，可以遵循以下步骤。
+
+#### 环境要求
+确保您已经安装了 [Rust 工具链](https://www.rust-lang.org/tools/install)。
+
+#### 步骤
+1.  **克隆仓库:** (如果尚未操作)
+    ```bash
+    git clone https://github.com/582033/vanish
+    cd vanish
+    ```
+
+2.  **编译并运行 (开发模式):**
+    ```bash
+    cargo run
+    ```
+    您也可以使用 `cargo run --release` 以生产模式运行。
+
+3.  **访问应用:**
+    服务器启动后，在浏览器中打开 `http://127.0.0.1:5820` 即可开始使用。
 
 ## 👨‍💻 开发指南
 

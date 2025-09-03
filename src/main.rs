@@ -11,7 +11,7 @@ async fn main() -> std::io::Result<()> {
         secrets: Arc::new(Mutex::new(HashMap::new())),
     });
 
-    println!("Server is running on http://127.0.0.1:8080");
+    println!("Server is running on http://127.0.0.1:5820");
 
     HttpServer::new(move || {
         App::new()
@@ -20,7 +20,7 @@ async fn main() -> std::io::Result<()> {
             .service(get_secret)
             .service(Files::new("/", "./static").index_file("index.html"))
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("127.0.0.1", 5820))?
     .run()
     .await
 }
