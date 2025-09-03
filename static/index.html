@@ -3,101 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vanish - 阅后即焚</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #f5f5f5;
-        }
-        .container {
-            max-width: 600px;
-            padding: 2rem;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        #result {
-            margin-top: 1rem;
-            padding: 1rem;
-            background: #e8f5e9;
-            border-left: 4px solid #4caf50;
-            display: none;
-        }
-        #result.error {
-            background: #ffebee;
-            border-left-color: #f44336;
-        }
-    </style>
+    <title>Vanish | 阅后即焚</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <main class="container" id="app-container">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans">
+    <main id="app-container" class="w-full max-w-lg mx-auto p-4">
         <!-- 内容将由JS动态渲染 -->
     </main>
 
     <script>
         const container = document.getElementById('app-container');
 
-        const AppRoutes = {
-            CREATE: 'create',
-            VIEW: 'view'
-        };
-
         function renderCreateForm() {
             container.innerHTML = `
-                <h1 style="text-align: center;">Vanish</h1>
-                <p style="text-align: center;">创建一条秘密消息。该消息在被阅读一次或超过设定的时间后将自动销毁。</p>
-                
-                <form id="secret-form">
-                    <label for="message">您的秘密消息 (最多 500 字)</label>
-                    <textarea id="message" name="message" rows="5" required maxlength="500"></textarea>
-
-                    <label for="expiration">自动销毁时间</label>
-                    <select id="expiration" name="expiration">
-                        <option value="60">1 分钟</option>
-                        <option value="300">5 分钟</option>
-                        <option value="600" selected>10 分钟</option>
-                        <option value="1800">30 分钟</option>
-                        <option value="3600">1 小时</option>
-                        <option value="21600">6 小时</option>
-                        <option value="43200">12 小时</option>
-                        <option value="86400">24 小时</option>
-                    </select>
-                    
-                    <button type="submit" id="submit-btn">创建秘密链接</button>
-                </form>
-
-                <div id="result">
-                    <strong>创建成功！</strong> 请分享此链接:
-                    <input type="text" id="secret-link" readonly>
-                    <button id="copy-btn">复制</button>
+                <div class="bg-white rounded-lg shadow-xl p-6 sm:p-8 transform transition-all">
+                    <div class="text-center">
+                        <h1 class="text-3xl font-bold text-gray-800">
+                            Vanish
+                            <span class="text-lg font-normal text-gray-500 ml-2 align-middle">阅后即焚</span>
+                        </h1>
+                    </div>
+                    <form id="secret-form" class="mt-8 space-y-6">
+                        <div>
+                            <label for="message" class="block text-sm font-medium text-gray-700">您的秘密消息 (最多 500 字)</label>
+                            <textarea id="message" name="message" rows="5" required maxlength="500" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center">
+                                <label for="expiration" class="block text-sm font-medium text-gray-700">自动销毁时间</label>
+                                <span class="text-xs text-gray-400">阅读一次或到期后将销毁</span>
+                            </div>
+                            <select id="expiration" name="expiration" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                <option value="60">1 分钟</option>
+                                <option value="300" selected>5 分钟</option>
+                                <option value="600">10 分钟</option>
+                                <option value="1800">30 分钟</option>
+                                <option value="3600">1 小时</option>
+                                <option value="21600">6 小时</option>
+                                <option value="43200">12 小时</option>
+                                <option value="86400">24 小时</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="submit-btn" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">创建秘密链接</button>
+                    </form>
+                    <div id="result" class="hidden mt-6 p-4 rounded-md">
+                        <!-- JS will populate this -->
+                    </div>
                 </div>
             `;
             attachCreateFormListeners();
         }
         
         async function renderSecretView(id) {
-            container.innerHTML = '<h2>正在加载秘密...</h2>';
+            container.innerHTML = `
+                <div class="bg-white rounded-lg shadow-xl p-6 sm:p-8 text-center transform transition-all">
+                    <h2 class="text-2xl font-bold text-gray-800">正在加载秘密...</h2>
+                    <div aria-busy="true" class="mt-4"></div>
+                </div>
+            `;
             try {
                 const response = await fetch(`/api/secrets/${id}`);
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.error || "Oops.. 消息不存在或已被销毁。");
+                    throw new Error(data.error || "消息不存在或已被销毁。");
                 }
                 
+                // Sanitize message to prevent HTML injection
+                const sanitizedMessage = document.createElement('div');
+                sanitizedMessage.textContent = data.message;
+
                 container.innerHTML = `
-                    <h2>秘密消息:</h2>
-                    <pre style="white-space: pre-wrap; background: #f0f0f0; padding: 1rem; border-radius: 4px;">${data.message}</pre>
-                    <p>此消息已被销毁。</p>
+                    <div class="bg-white rounded-lg shadow-xl p-6 sm:p-8">
+                        <h2 class="text-2xl font-bold text-gray-800 text-center">秘密消息:</h2>
+                        <pre class="mt-4 p-4 bg-gray-100 rounded-md whitespace-pre-wrap text-left text-gray-700">${sanitizedMessage.innerHTML}</pre>
+                        <p class="mt-4 text-center text-gray-500">此消息已被销毁。</p>
+                    </div>
                 `;
             } catch (error) {
                 container.innerHTML = `
-                    <h2>Oops..</h2>
-                    <p>${error.message}</p>
+                    <div class="bg-white rounded-lg shadow-xl p-6 sm:p-8 text-center">
+                        <h2 class="text-2xl font-bold text-red-600">链接已失效</h2>
+                        <p class="mt-4 text-gray-600">${error.message}</p>
+                    </div>
                 `;
             }
         }
@@ -128,32 +116,35 @@
                     }
 
                     const secretUrl = `${window.location.origin}/#${data.id}`;
-                    const secretLinkInput = document.getElementById('secret-link');
-                    secretLinkInput.value = secretUrl;
-                    resultDiv.className = '';
-                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'mt-6 p-4 rounded-md bg-green-50 border-l-4 border-green-400';
+                    resultDiv.innerHTML = `
+                        <strong class="font-bold text-green-800">创建成功！</strong>
+                        <p class="text-sm text-green-700 mt-1">请分享此链接:</p>
+                        <div class="mt-2 flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600">
+                            <input type="text" id="secret-link" value="${secretUrl}" readonly class="flex-1 block w-full rounded-none rounded-l-md border-0 bg-transparent py-2 px-3 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm">
+                            <button id="copy-btn" class="relative -ml-px inline-flex items-center gap-x-1.5 rounded-r-md px-3 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">复制</button>
+                        </div>
+                    `;
+                    resultDiv.classList.remove('hidden');
 
-                    secretLinkInput.select();
-                    document.execCommand('copy');
-                    document.getElementById('copy-btn').textContent = '已复制!';
+                    const copyBtn = document.getElementById('copy-btn');
+                    copyBtn.addEventListener('click', () => {
+                        const secretLinkInput = document.getElementById('secret-link');
+                        secretLinkInput.select();
+                        navigator.clipboard.writeText(secretLinkInput.value);
+                        copyBtn.textContent = '已复制!';
+                        setTimeout(() => { copyBtn.textContent = '复制'; }, 2000);
+                    });
+                    copyBtn.click(); // Auto-copy
 
                 } catch (error) {
-                    resultDiv.className = 'error';
-                    resultDiv.innerHTML = `<strong>错误:</strong> ${error.message}`;
-                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'mt-6 p-4 rounded-md bg-red-50 border-l-4 border-red-400';
+                    resultDiv.innerHTML = `<strong class="font-bold text-red-800">错误:</strong> <span class="block sm:inline">${error.message}</span>`;
+                    resultDiv.classList.remove('hidden');
                 } finally {
                     submitBtn.removeAttribute('aria-busy');
                     submitBtn.disabled = false;
                 }
-            });
-
-            const copyBtn = document.getElementById('copy-btn');
-            copyBtn.addEventListener('click', () => {
-                const secretLinkInput = document.getElementById('secret-link');
-                secretLinkInput.select();
-                document.execCommand('copy');
-                copyBtn.textContent = '已复制!';
-                setTimeout(() => { copyBtn.textContent = '复制'; }, 2000);
             });
         }
 
